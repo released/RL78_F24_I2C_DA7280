@@ -92,11 +92,6 @@ void delay_ms(unsigned int ms)
 
 void simple_test(void)
 {
-    // unsigned char res = 0;
-    // res = 0x80;
-    // printf("0x%2X\r\n" ,~res);
-    // res = 0x07;
-    // printf("0x%2X\r\n" ,~res);
 
 }
 
