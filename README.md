@@ -2,10 +2,10 @@
  RL78_F24_I2C_DA7280
 
 
-
 udpate @ 2024/03/25
 
 1. press F24 EVB button over 2.5 sec , for entry demo mode (play seq 0 ~ 3)
+
 
 udpate @ 2024/03/08
 
