@@ -11,8 +11,10 @@ extern unsigned char flag_play;
 
 void set_TIMER_PERIOD_1000MS(void);
 void reset_TIMER_PERIOD_1000MS(void);
-unsigned char Is_TIMER_PERIOD_1000MS_Trig(void);
+bool Is_TIMER_PERIOD_1000MS_Trig(void);
 void Timer_1ms_IRQ(void);
+
+void delay_ms(unsigned int ms);
 
 void drv_I2C_callback_error(unsigned char err);
 void drv_set_I2C_receive_flag(bool flag);
@@ -30,6 +32,18 @@ void DA7280_playback(void);
 void DA7280_Process(unsigned char key);
 void DA7280_nIRQ_Process_in_IRQ(void);
 
+void DA7280_set_Init_Flag(bool flag);
+bool DA7280_is_Init_Ready(void);
+
+void DA7280_set_TIMER_PERIOD(void);
+void DA7280_reset_TIMER_PERIOD(void);
+bool DA7280_is_TIMER_PERIOD_Trig(void);
+bool DA7280_is_demo_mode_enable(void);
+void DA7280_demo_enable(unsigned char on);
+void DA7280_demo_mode(void);
+
+void Button_Process_long_counter(void);
+void Button_Process_in_polling(void);
 void Button_Process_in_IRQ(void);
 void UARTx_Process(unsigned char rxbuf);
 

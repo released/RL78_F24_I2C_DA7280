@@ -13,11 +13,11 @@
 /*_____ D E C L A R A T I O N S ____________________________________________*/
 
 struct flag_32bit flag_HAPTIC_CTL;
-#define FLAG_HAPTIC_TRIG_BTN                 	            (flag_HAPTIC_CTL.bit0)
+#define FLAG_HAPTIC_SET_TIMER_PERIOD                 	    (flag_HAPTIC_CTL.bit0)
 #define FLAG_HAPTIC_TRIG_DA7280_FINISH                      (flag_HAPTIC_CTL.bit1)
-#define FLAG_HAPTIC_REVERSE2                 	            (flag_HAPTIC_CTL.bit2)
-#define FLAG_HAPTIC_REVERSE3                                (flag_HAPTIC_CTL.bit3)
-#define FLAG_HAPTIC_REVERSE4                                (flag_HAPTIC_CTL.bit4)
+#define FLAG_HAPTIC_DEMO_START                 	            (flag_HAPTIC_CTL.bit2)
+#define FLAG_HAPTIC_STATE_MACHINE                           (flag_HAPTIC_CTL.bit3)
+#define FLAG_HAPTIC_INIT_DA7280_RDY                         (flag_HAPTIC_CTL.bit4)
 #define FLAG_HAPTIC_REVERSE5                                (flag_HAPTIC_CTL.bit5)
 #define FLAG_HAPTIC_REVERSE6                                (flag_HAPTIC_CTL.bit6)
 #define FLAG_HAPTIC_REVERSE7                                (flag_HAPTIC_CTL.bit7)
@@ -38,7 +38,7 @@ struct flag_32bit flag_HAPTIC_CTL;
 #define FLAG_HAPTIC_PLAY_IDX13                              (flag_HAPTIC_CTL.bit20)
 #define FLAG_HAPTIC_PLAY_IDX14                              (flag_HAPTIC_CTL.bit21)
 #define FLAG_HAPTIC_PLAY_IDX15                              (flag_HAPTIC_CTL.bit22)
-#define FLAG_HAPTIC_REVERSE23                               (flag_HAPTIC_CTL.bit23)
+#define FLAG_HAPTIC_PLAY_IDX0                               (flag_HAPTIC_CTL.bit23)
 
 /*_____ D E F I N I T I O N S ______________________________________________*/
 
@@ -88,6 +88,100 @@ const unsigned char snp_mem[100] = {
 };
 
 
+
+MD_STATUS _simple_DA7280_Check_All_IRQ_EVENT(void)
+{
+	MD_STATUS ret = MD_OK;
+    unsigned char tmp = 0;
+    unsigned char device_addr = DA7280_ADDR_8BIT;
+    unsigned char reg_addr = 0;
+    const unsigned char indicator[] = "DA7280_CheckIRQ_MASK";
+
+    tmp = 0;
+    reg_addr = DA7280_IRQ_MASK1;
+    ret = I2C_read(device_addr,reg_addr,&tmp,1);
+    if (ret != MD_OK)
+    {
+        printf("[error]%s:0x%02X\r\n",indicator,ret);
+        return ret;
+    }
+
+    printf("%s-IRQ_MASK1-r:0x%02X\r\n",indicator,tmp);
+
+
+    tmp = 0;
+    reg_addr = DA7280_IRQ_EVENT_ACTUATOR_FAULT;
+    ret = I2C_read(device_addr,reg_addr,&tmp,1);
+    if (ret != MD_OK)
+    {
+        printf("[error]%s:0x%02X\r\n",indicator,ret);
+        return ret;
+    }
+
+    printf("%s-IRQ_EVENT_ACTUATOR_FAULT-r:0x%02X\r\n",indicator,tmp);
+
+    tmp = 0;
+    reg_addr = DA7280_IRQ_STATUS2;
+    ret = I2C_read(device_addr,reg_addr,&tmp,1);
+    if (ret != MD_OK)
+    {
+        printf("[error]%s:0x%02X\r\n",indicator,ret);
+        return ret;
+    }
+
+    printf("%s-IRQ_STATUS2-r:0x%02X\r\n",indicator,tmp);
+
+    tmp = 0;
+    reg_addr = DA7280_IRQ_MASK2;
+    ret = I2C_read(device_addr,reg_addr,&tmp,1);
+    if (ret != MD_OK)
+    {
+        printf("[error]%s:0x%02X\r\n",indicator,ret);
+        return ret;
+    }
+
+    printf("%s-IRQ_MASK2-r:0x%02X\r\n",indicator,tmp);
+
+
+    // tmp = (unsigned char)(0x00 & ~DA7280_SEQ_DONE_M_MASK);
+    // tmp = (unsigned char)(tmp | ((enable ? 1:0) << DA7280_SEQ_DONE_M_SHIFT));  
+
+    // I2C_write(device_addr,reg_addr,&tmp,1);
+
+    // printf("%s-2-w:0x%02X\r\n",indicator,tmp);
+	return ret;
+}
+
+MD_STATUS _simple_DA7280_ForceClearSeqDone(void)
+{
+	MD_STATUS ret = MD_OK;
+    unsigned char tmp = 0;
+    unsigned char device_addr = DA7280_ADDR_8BIT;
+    unsigned char reg_addr = DA7280_IRQ_MASK1;
+    unsigned char SEQ_DONE_M  = 0;
+    const unsigned char indicator[] = "DA7280_ForceClearSeqDone";
+    bool enable = 1;
+
+    ret = I2C_read(device_addr,reg_addr,&tmp,1);
+    if (ret != MD_OK)
+    {
+        printf("[error]%s:0x%02X\r\n",indicator,ret);
+        return ret;
+    }
+
+    SEQ_DONE_M = tmp;
+    printf("%s-1-r:0x%02X\r\n",indicator,SEQ_DONE_M);
+
+    tmp = (unsigned char)(0x00 & ~DA7280_SEQ_DONE_M_MASK);
+    tmp = (unsigned char)(tmp | ((enable ? 1:0) << DA7280_SEQ_DONE_M_SHIFT));  
+
+    I2C_write(device_addr,reg_addr,&tmp,1);
+
+    printf("%s-2-w:0x%02X\r\n",indicator,tmp);
+	return ret;
+}
+
+
 MD_STATUS _simple_DA7280_CheckIRQ_EVENT_WARNING_DIAG(void)
 {
 	MD_STATUS ret = MD_OK;
@@ -99,11 +193,11 @@ MD_STATUS _simple_DA7280_CheckIRQ_EVENT_WARNING_DIAG(void)
     ret = I2C_read(device_addr,reg_addr,&tmp,1);
     if (ret != MD_OK)
     {
-        printf("[error]%s-1:0x%02X\r\n",indicator,ret);
+        printf("[error]%s-1-r:0x%02X\r\n",indicator,ret);
         return ret;
     }
 
-    printf("%s-1:0x%02X\r\n",indicator,tmp);
+    printf("%s-1-r:0x%02X\r\n",indicator,tmp);
 
     switch(tmp)
     {
@@ -145,11 +239,11 @@ MD_STATUS _simple_DA7280_CheckIRQ_EVENT_SEQ_DIAG(void)
     ret = I2C_read(device_addr,reg_addr,&tmp,1);
     if (ret != MD_OK)
     {
-        printf("[error]%s-1:0x%02X\r\n",indicator,ret);
+        printf("[error]%s-1-r:0x%02X\r\n",indicator,ret);
         return ret;
     }
 
-    printf("%s-1:0x%02X\r\n",indicator,tmp);
+    printf("%s-1-r:0x%02X\r\n",indicator,tmp);
 
     switch(tmp)
     {
@@ -193,14 +287,14 @@ MD_STATUS _simple_DA7280_SetIRQEvent1(unsigned char report_event)
     }
 
     event = tmp;
-    printf("%s-1:0x%02X\r\n",indicator,event);
+    printf("%s-1-r:0x%02X\r\n",indicator,event);
 
     tmp = (unsigned char)(event & ~report_event);
     tmp = (unsigned char)(tmp | report_event );  
 
     I2C_write(device_addr,reg_addr,&tmp,1);
 
-    printf("%s-2:0x%02X\r\n",indicator,tmp);
+    printf("%s-2-w:0x%02X\r\n",indicator,tmp);
 
     //  read back event status  
     ret = I2C_read(device_addr,reg_addr,&tmp,1);
@@ -210,7 +304,7 @@ MD_STATUS _simple_DA7280_SetIRQEvent1(unsigned char report_event)
         return ret;
     }
 
-    printf("%s-3:0x%02X\r\n",indicator,tmp);
+    printf("%s-3-r:0x%02X\r\n",indicator,tmp);
 
 	return ret;
 }
@@ -292,14 +386,14 @@ MD_STATUS _simple_DA7280_SetSequenceDone(bool enable)
     }
 
     SEQ_DONE_M = tmp;
-    printf("%s-1:0x%02X\r\n",indicator,SEQ_DONE_M);
+    printf("%s-1-r:0x%02X\r\n",indicator,SEQ_DONE_M);
 
     tmp = (unsigned char)(SEQ_DONE_M & ~DA7280_SEQ_DONE_M_MASK);
     tmp = (unsigned char)(tmp | ((enable ? 1:0) << DA7280_SEQ_DONE_M_SHIFT));  
 
     I2C_write(device_addr,reg_addr,&tmp,1);
 
-    printf("%s-2:0x%02X\r\n",indicator,tmp);
+    printf("%s-2-w:0x%02X\r\n",indicator,tmp);
 	return ret;
 }
 
@@ -355,14 +449,14 @@ MD_STATUS _simple_DA7280_SetStandByState(bool enable)
     }
 
     STANDBY_EN = tmp;
-    printf("%s-1:0x%02X\r\n",indicator,STANDBY_EN);
+    printf("%s-1-r:0x%02X\r\n",indicator,STANDBY_EN);
 
     tmp = (unsigned char)(STANDBY_EN & ~DA7280_STANDBY_EN_MASK);
     tmp = (unsigned char)(tmp | ((enable ? 1:0) << DA7280_STANDBY_EN_SHIFT));  
 
     I2C_write(device_addr,reg_addr,&tmp,1);
 
-    printf("%s-2:0x%02X\r\n",indicator,tmp);
+    printf("%s-2-w:0x%02X\r\n",indicator,tmp);
 	return ret;
 }
 
@@ -384,14 +478,14 @@ MD_STATUS _simple_DA7280_SetPlayBackMemory(bool enable)
     }
 
     SEQ_START = tmp;
-    printf("%s-1:0x%02X\r\n",indicator,SEQ_START);
+    printf("%s-1-r:0x%02X\r\n",indicator,SEQ_START);
 
     tmp = (unsigned char)(SEQ_START & ~DA7280_SEQ_START_MASK);
     tmp = (unsigned char)(tmp | ((enable ? 1:0) << DA7280_SEQ_START_SHIFT));  
 
     I2C_write(device_addr,reg_addr,&tmp,1);
 
-    printf("%s-2:0x%02X\r\n",indicator,tmp);
+    printf("%s-2-w:0x%02X\r\n",indicator,tmp);
 	return ret;
 }
 
@@ -422,7 +516,7 @@ MD_STATUS _simple_DA7280_Set_PS_SEQ_ID_LOOP(unsigned char SEQ_ID , unsigned char
     }
 
     SEQ_CTL2 = tmp;
-    printf("%s-1:0x%02X\r\n",indicator,SEQ_CTL2);
+    printf("%s-1-r:0x%02X\r\n",indicator,SEQ_CTL2);
 
     // tmp = (unsigned char)(tmp | (SEQ_ID << DA7280_PS_SEQ_ID_SHIFT));  
     
@@ -431,7 +525,7 @@ MD_STATUS _simple_DA7280_Set_PS_SEQ_ID_LOOP(unsigned char SEQ_ID , unsigned char
 
     I2C_write(device_addr,reg_addr,&tmp,1);
 
-    printf("%s-2:0x%02X\r\n",indicator,tmp);
+    printf("%s-2-w:0x%02X\r\n",indicator,tmp);
 	return ret;
 }
 
@@ -453,14 +547,14 @@ MD_STATUS _simple_DA7280_SetContinueSequence(bool enable)
     }
 
     SEQ_CONTINUE = tmp;
-    printf("%s-1:0x%02X\r\n",indicator,SEQ_CONTINUE);
+    printf("%s-1-r:0x%02X\r\n",indicator,SEQ_CONTINUE);
 
     tmp = (unsigned char)(SEQ_CONTINUE & ~DA7280_SEQ_CONTINUE_MASK);
     tmp = (unsigned char)(tmp | ((enable ? 1:0) << DA7280_SEQ_CONTINUE_SHIFT));  
 
     I2C_write(device_addr,reg_addr,&tmp,1);
 
-    printf("%s-2:0x%02X\r\n",indicator,tmp);
+    printf("%s-2-w:0x%02X\r\n",indicator,tmp);
 	return ret;
 }
 
@@ -489,14 +583,14 @@ MD_STATUS _simple_DA7280_PlayFromMemory(void)
     }
 
     playMem = tmp;
-    printf("%s-1:0x%02X\r\n",indicator,playMem);
+    printf("%s-1-r:0x%02X\r\n",indicator,playMem);
 
     tmp = (unsigned char)(playMem & ~DA7280_SEQ_START_MASK);
     tmp = (unsigned char)(tmp | DA7280_SEQ_START_MASK);
 
     I2C_write(device_addr,reg_addr,&tmp,1);
 
-    printf("%s-2:0x%02X\r\n",indicator,tmp);
+    printf("%s-2-w:0x%02X\r\n",indicator,tmp);
 	return ret;
 }
 
@@ -566,14 +660,14 @@ MD_STATUS _simple_DA7280_SetMode(unsigned char mode)
     }
 
     modeSet = tmp;
-    printf("%s-1:0x%02X\r\n",indicator,modeSet);
+    printf("%s-1-r:0x%02X\r\n",indicator,modeSet);
 
     tmp = (unsigned char)(modeSet & ~DA7280_OPERATION_MODE_MASK);
     tmp = (unsigned char)(tmp | (mode << DA7280_OPERATION_MODE_SHIFT));
 
     I2C_write(device_addr,reg_addr,&tmp,1);
 
-    printf("%s-2:0x%02X\r\n",indicator,tmp);
+    printf("%s-2-w:0x%02X\r\n",indicator,tmp);
 	return ret;
 }
 
@@ -602,14 +696,14 @@ MD_STATUS _simple_DA7280_SetFrequencyTracking(bool enable)
     }
 
     freqTrack = tmp;
-    printf("%s-1:0x%02X\r\n",indicator,freqTrack);
+    printf("%s-1-r:0x%02X\r\n",indicator,freqTrack);
 
     tmp = (unsigned char)(freqTrack & ~DA7280_FREQ_TRACK_EN_MASK);
     tmp = (unsigned char)(tmp | ((enable ? 1:0) << DA7280_FREQ_TRACK_EN_SHIFT));  
 
     I2C_write(device_addr,reg_addr,&tmp,1);
 
-    printf("%s-2:0x%02X\r\n",indicator,tmp);
+    printf("%s-2-w:0x%02X\r\n",indicator,tmp);
 	return ret;
 }
 
@@ -633,6 +727,54 @@ MD_STATUS _simple_DA7280_Open(void)
     }
 
     printf("%s:0x%02X\r\n", indicator ,tmp);
+	return ret;
+}
+
+/*
+    data len : * // 155 , 142
+    set reg with data
+*/
+
+MD_STATUS _simple_DA7280_SetConfigTbl(unsigned char data_len, const unsigned char  buffer_tbl[][2])
+{
+
+	MD_STATUS ret = MD_OK;
+    unsigned char device_addr = DA7280_ADDR_8BIT;
+    unsigned char reg_addr = 0;
+    unsigned char reg_data = 0;
+    const unsigned char indicator[] = "DA7280_SetConfigTbl";
+    unsigned char i = 0;
+
+    printf("table size:%2d\r\n", data_len );
+
+    for( i = 0 ; i < data_len ; i++)
+    {
+        reg_addr = buffer_tbl[i][0];
+        reg_data = buffer_tbl[i][1];
+        ret = I2C_write(device_addr,reg_addr, &reg_data ,1);
+        
+        #if 0   // debug
+        printf("(%3d)addr:0x%02X,data:0x%02X\r\n" ,i, reg_addr,reg_data);
+
+        // printf("0x%02X," , tmp);
+        // if ((i+1)%10 ==0)
+        // {
+        //     printf("\r\n");
+        // }   
+        #endif
+
+        if (ret != MD_OK)
+        {
+            printf("[error]%s:0x%02X\r\n",indicator,ret);
+            return ret;
+        }
+    }
+
+    if (ret == MD_OK)
+    {
+        printf("%s done\r\n",indicator);
+    }
+
 	return ret;
 }
 
@@ -660,7 +802,7 @@ void DA7280_forceStop(void)
 }
 
 
-void DA7280_playback_finish_check(void)
+void DA7280_PlaybackFinishCheck(void)
 {
     /*    
         4.  When the haptic sequence is completed, DA7280 will signal this by setting nIRQ = 0 and setting 
@@ -669,7 +811,7 @@ void DA7280_playback_finish_check(void)
     */
 
     MD_STATUS ret = MD_OK;
-    const unsigned char indicator[] = "DA7280_playback";
+    const unsigned char indicator[] = "DA7280_PlaybackFinishCheck";
     unsigned char event = 0;
 
     do
@@ -683,8 +825,69 @@ void DA7280_playback_finish_check(void)
         if ((event == E_SEQ_DONE) || 
             (event == HAPTIC_SUCCESS))
         {
+            /*
+                5.  Clear the nIRQ and SEQ_DONE_M signals, set SEQ_DONE_M =1. 
+            */
+            ret = _simple_DA7280_SetIRQEvent1(event);
+            if (ret != MD_OK)
+            {
+                printf("[error]%s:0x%02X\r\n",indicator,ret);
+            }   
+
             break;
         }
+        else
+        {
+            switch(event)
+            {
+                case E_SEQ_FAULT:
+                    _simple_DA7280_CheckIRQ_EVENT_SEQ_DIAG();
+                    printf("[error]%s:event-E_SEQ_FAULT(0x%02X)\r\n",indicator,event);
+                    break;
+
+                case E_WARNING:
+                    _simple_DA7280_CheckIRQ_EVENT_WARNING_DIAG();
+                    printf("[error]%s:event-E_WARNING(0x%02X)\r\n",indicator,event);
+                    break;
+
+                case E_SEQ_CONTINUE:
+                    printf("[error]%s:event-E_SEQ_CONTINUE(0x%02X)\r\n",indicator,event);
+                    break;
+                case E_UVLO:
+                    printf("[error]%s:event-E_UVLO(0x%02X)\r\n",indicator,event);
+                    break;
+                case E_OVERTEMP_CRIT:
+                    printf("[error]%s:event-E_OVERTEMP_CRIT(0x%02X)\r\n",indicator,event);
+                    break;
+                case E_ACTUATOR_FAULT:
+                    printf("[error]%s:event-E_ACTUATOR_FAULT(0x%02X)\r\n",indicator,event);
+                    break;
+                case E_OC_FAULT:
+                    printf("[error]%s:event-E_OC_FAULT(0x%02X)\r\n",indicator,event);
+                    break;
+
+                default :                    
+                    printf("[error]%s:0x%02X-EXCEPTION(0x%02X)\r\n",indicator ,event);
+                    break;
+            }
+
+            ret = _simple_DA7280_Check_All_IRQ_EVENT();
+            if (ret != MD_OK)
+            {
+                printf("[error]%s:0x%02X\r\n",indicator,ret);
+            }
+
+            /*
+                5.  Clear the nIRQ and SEQ_DONE_M signals, set SEQ_DONE_M =1. 
+            */
+            ret = _simple_DA7280_SetIRQEvent1(event);
+            if (ret != MD_OK)
+            {
+                printf("[error]%s:0x%02X\r\n",indicator,ret);
+            }
+
+        }
+        #if 0
         else if (event == E_SEQ_FAULT)
         {
             _simple_DA7280_CheckIRQ_EVENT_SEQ_DIAG();
@@ -715,7 +918,26 @@ void DA7280_playback_finish_check(void)
         }
         else
         {
-            printf("[error]%s:event-0x%02X\r\n",indicator,event);
+
+            printf("[error]%s:event-0x%02X-",indicator,event);
+            switch(event)
+            {
+                case E_SEQ_CONTINUE:
+                    printf("E_SEQ_CONTINUE\r\n");
+                    break;
+                case E_UVLO:
+                    printf("E_UVLO\r\n");
+                    break;
+                case E_OVERTEMP_CRIT:
+                    printf("E_OVERTEMP_CRIT\r\n");
+                    break;
+                case E_ACTUATOR_FAULT:
+                    printf("E_ACTUATOR_FAULT\r\n");
+                    break;
+                case E_OC_FAULT:
+                    printf("E_OC_FAULT\r\n");
+                    break;
+            }
             
             /*
                 5.  Clear the nIRQ and SEQ_DONE_M signals, set SEQ_DONE_M =1. 
@@ -727,33 +949,35 @@ void DA7280_playback_finish_check(void)
             }
 
         }
+        #endif
 
     }while(1);
 
-    /*
-        5.  Clear the nIRQ and SEQ_DONE_M signals, set SEQ_DONE_M =1. 
-    */
-    ret = _simple_DA7280_SetIRQEvent1(event);
-    if (ret != MD_OK)
-    {
-        printf("[error]%s:0x%02X\r\n",indicator,ret);
-    }    
+    // /*
+    //     5.  Clear the nIRQ and SEQ_DONE_M signals, set SEQ_DONE_M =1. 
+    // */
+    // ret = _simple_DA7280_SetIRQEvent1(event);
+    // if (ret != MD_OK)
+    // {
+    //     printf("[error]%s:0x%02X\r\n",indicator,ret);
+    // }    
 
     if (ret == MD_OK)
     {
         printf("%s(0x%02X) done\r\n",indicator,event);
     }
 
+
 }
 
-void DA7280_playback_idx(unsigned char idx , unsigned char loop , unsigned char enableContinue)
+void DA7280_PlaybackIndex(unsigned char idx , unsigned char loop , unsigned char enableContinue)
 {
 
     MD_STATUS ret = MD_OK;
-    const unsigned char indicator[] = "DA7280_playback";
+    const unsigned char indicator[] = "DA7280_PlaybackIndex";
     // unsigned char event = 0;
 
-    printf("\r\n%s start\r\n",indicator);
+    printf("\r\n%s start,seq:%d\r\n",indicator,idx);
 
     /*
         1.  While in the IDLE or STANDBY state, configure PS_SEQ_ID and PS_SEQ_LOOP to select the 
@@ -824,17 +1048,33 @@ void DA7280_playback_idx(unsigned char idx , unsigned char loop , unsigned char 
     nIRQ : P77 (INTP12)
 */
 
-void DA7280_init(void)
+void DA7280_init(void)  //Byte 1: Defines the number of sequences stored.
 {
+    // unsigned char data_len = 0;
+    unsigned char res = 0;
 
-    _simple_DA7280_Open();
-    _simple_DA7280_SetFrequencyTracking(true);
-    // _simple_DA7280_SetMode(DA7280_ETWM_MODE);    // DA7280_RTWM_MODE ? 
-    _simple_DA7280_SetMode(DA7280_RTWM_MODE);
-    _simple_DA7280_WriteWaveform(snp_mem);
+    #if 0   // use config table directly
+    // data_len = sizeof(tbl)/(sizeof(tbl[0]));
+    // res = _simple_DA7280_SetConfigTbl(data_len,tbl);
+    
+    #else
+    res = _simple_DA7280_Open();
+    res = _simple_DA7280_SetFrequencyTracking(true);
+    //res =  _simple_DA7280_SetMode(DA7280_ETWM_MODE);    // DA7280_RTWM_MODE ? 
+    res = _simple_DA7280_SetMode(DA7280_RTWM_MODE);
+    res = _simple_DA7280_WriteWaveform(snp_mem);
+    #endif
 
+    if (res != MD_OK)
+    {
+        DA7280_set_Init_Flag(0);
+    }
+    else
+    {
+        DA7280_set_Init_Flag(1);
+    }
 
-    printf("DA7280_init end\r\n");
+    printf("DA7280_init end (0x%02X)\r\n" , res);
 }
 
 
@@ -845,6 +1085,9 @@ void DA7280_key_filter(unsigned char key)
         flag_play = 0;
         switch(key)
         {
+            case '0':
+                FLAG_HAPTIC_PLAY_IDX0 = 1;
+                break;
             case '1':
                 FLAG_HAPTIC_PLAY_IDX1 = 1;
                 break;
@@ -903,115 +1146,250 @@ void DA7280_key_filter(unsigned char key)
 
 void DA7280_playback(void)
 {
+    if (FLAG_HAPTIC_PLAY_IDX0)
+    {
+        DA7280_PlaybackIndex(SEQUENCE_IDX0 , 0 ,0);
+        FLAG_HAPTIC_PLAY_IDX0 = 0;
+    }
+
     if (FLAG_HAPTIC_PLAY_IDX1)
     {
-        DA7280_playback_idx(SEQUENCE_IDX1 , 0 ,0);
+        DA7280_PlaybackIndex(SEQUENCE_IDX1 , 0 ,0);
         FLAG_HAPTIC_PLAY_IDX1 = 0;
     }
 
     if (FLAG_HAPTIC_PLAY_IDX2)
     {
-        DA7280_playback_idx(SEQUENCE_IDX2 , 0 ,0);
+        DA7280_PlaybackIndex(SEQUENCE_IDX2 , 0 ,0);
         FLAG_HAPTIC_PLAY_IDX2 = 0;
     }
     
     if (FLAG_HAPTIC_PLAY_IDX3)
     {
-        DA7280_playback_idx(SEQUENCE_IDX3 , 0 ,0);
+        DA7280_PlaybackIndex(SEQUENCE_IDX3 , 0 ,0);
         FLAG_HAPTIC_PLAY_IDX3 = 0;
     }
     
     if (FLAG_HAPTIC_PLAY_IDX4)
     {
-        DA7280_playback_idx(SEQUENCE_IDX4 , 0 ,0);
+        DA7280_PlaybackIndex(SEQUENCE_IDX4 , 0 ,0);
         FLAG_HAPTIC_PLAY_IDX4 = 0;
     }
     
     if (FLAG_HAPTIC_PLAY_IDX5)
     {
-        DA7280_playback_idx(SEQUENCE_IDX5 , 0 ,0);
+        DA7280_PlaybackIndex(SEQUENCE_IDX5 , 0 ,0);
         FLAG_HAPTIC_PLAY_IDX5 = 0;
     }
     
     if (FLAG_HAPTIC_PLAY_IDX6)
     {
-        DA7280_playback_idx(SEQUENCE_IDX6 , 0 ,0);
+        DA7280_PlaybackIndex(SEQUENCE_IDX6 , 0 ,0);
         FLAG_HAPTIC_PLAY_IDX6 = 0;
     }
     
     if (FLAG_HAPTIC_PLAY_IDX7)
     {
-        DA7280_playback_idx(SEQUENCE_IDX7 , 0 ,0);
+        DA7280_PlaybackIndex(SEQUENCE_IDX7 , 0 ,0);
         FLAG_HAPTIC_PLAY_IDX7 = 0;
     }
     
     if (FLAG_HAPTIC_PLAY_IDX8)
     {
-        DA7280_playback_idx(SEQUENCE_IDX8 , 0 ,0);
+        DA7280_PlaybackIndex(SEQUENCE_IDX8 , 0 ,0);
         FLAG_HAPTIC_PLAY_IDX8 = 0;
     }
     
     if (FLAG_HAPTIC_PLAY_IDX9)
     {
-        DA7280_playback_idx(SEQUENCE_IDX9 , 0 ,0);
+        DA7280_PlaybackIndex(SEQUENCE_IDX9 , 0 ,0);
         FLAG_HAPTIC_PLAY_IDX9 = 0;
     }
     
     if (FLAG_HAPTIC_PLAY_IDX10)
     {
-        DA7280_playback_idx(SEQUENCE_IDX10 , 0 ,0);
+        DA7280_PlaybackIndex(SEQUENCE_IDX10 , 0 ,0);
         FLAG_HAPTIC_PLAY_IDX10 = 0;
     }
     
     if (FLAG_HAPTIC_PLAY_IDX11)
     {
-        DA7280_playback_idx(SEQUENCE_IDX11 , 0 ,0);
+        DA7280_PlaybackIndex(SEQUENCE_IDX11 , 0 ,0);
         FLAG_HAPTIC_PLAY_IDX11 = 0;
     }
     
     if (FLAG_HAPTIC_PLAY_IDX12)
     {
-        DA7280_playback_idx(SEQUENCE_IDX12 , 0 ,0);
+        DA7280_PlaybackIndex(SEQUENCE_IDX12 , 0 ,0);
         FLAG_HAPTIC_PLAY_IDX12 = 0;
     }
     
     if (FLAG_HAPTIC_PLAY_IDX13)
     {
-        DA7280_playback_idx(SEQUENCE_IDX13 , 0 ,0);
+        DA7280_PlaybackIndex(SEQUENCE_IDX13 , 0 ,0);
         FLAG_HAPTIC_PLAY_IDX13 = 0;
     }
     
     if (FLAG_HAPTIC_PLAY_IDX14)
     {
-        DA7280_playback_idx(SEQUENCE_IDX14 , 0 ,0);
+        DA7280_PlaybackIndex(SEQUENCE_IDX14 , 0 ,0);
         FLAG_HAPTIC_PLAY_IDX14 = 0;
     }
     
     if (FLAG_HAPTIC_PLAY_IDX15)
     {
-        DA7280_playback_idx(SEQUENCE_IDX15 , 0 ,0);
+        DA7280_PlaybackIndex(SEQUENCE_IDX15 , 0 ,0);
         FLAG_HAPTIC_PLAY_IDX15 = 0;
     }
 
 }
 
 void DA7280_Process(unsigned char key)
-{
-    
+{    
+    if (!DA7280_is_Init_Ready())
+    {
+        // init fail
+        return;
+    }
+
+    // init OK , continne process
+    if (!DA7280_is_demo_mode_enable())
+    {
+        DA7280_key_filter(key);
+        DA7280_playback();
+    }
+    else
+    {        
+        DA7280_demo_mode();
+    }
+
     if (FLAG_HAPTIC_TRIG_DA7280_FINISH)
     {
         FLAG_HAPTIC_TRIG_DA7280_FINISH = 0;
-        DA7280_playback_finish_check();
-        printf("DA7280 exec finish\r\n");
+        DA7280_PlaybackFinishCheck();
+        printf("DA7280 exec finish\r\n\r\n");
     }
 
-    DA7280_key_filter(key);
-    DA7280_playback();
 }
 
+void DA7280_set_Init_Flag(bool flag)
+{
+    FLAG_HAPTIC_INIT_DA7280_RDY = flag;
+}
+
+bool DA7280_is_Init_Ready(void)
+{
+    return FLAG_HAPTIC_INIT_DA7280_RDY;
+}
 
 void DA7280_nIRQ_Process_in_IRQ(void)
 {
     FLAG_HAPTIC_TRIG_DA7280_FINISH = 1;
+}
+
+void DA7280_set_TIMER_PERIOD(void)
+{
+    FLAG_HAPTIC_SET_TIMER_PERIOD = 1;
+}
+
+void DA7280_reset_TIMER_PERIOD(void)
+{
+    FLAG_HAPTIC_SET_TIMER_PERIOD = 0;
+}
+
+bool DA7280_is_TIMER_PERIOD_Trig(void)
+{
+    return FLAG_HAPTIC_SET_TIMER_PERIOD;
+}
+
+void DA7280_demo_mode_statemachine(void)
+{
+    static unsigned char state = 0;
+    static unsigned char loop = 0;
+
+    printf("\r\ndemo mode seq %d(%d)\r\n" ,state ,loop);
+
+    switch(state)
+    {
+        case 0:        
+            DA7280_PlaybackIndex(SEQUENCE_IDX0 , 0 ,0);
+            loop++;
+            if (loop > 1)
+            {
+                loop = 0;
+                state++;
+            }
+            break;
+        case 1:        
+            DA7280_PlaybackIndex(SEQUENCE_IDX1 , 0 ,0);
+            loop++;
+            if (loop > 1)
+            {
+                loop = 0;
+                state++;
+            }
+            break;
+        case 2:        
+            DA7280_PlaybackIndex(SEQUENCE_IDX2 , 0 ,0);
+            loop++;
+            if (loop > 1)
+            {
+                loop = 0;
+                state++;
+            }
+            break;
+        case 3:        
+            DA7280_PlaybackIndex(SEQUENCE_IDX3 , 0 ,0);
+            loop++;
+            if (loop > 1)
+            {
+                loop = 0;
+                state = 0;
+            }
+            break;
+    }
+
+}
+
+bool DA7280_is_demo_mode_enable(void)
+{
+    return FLAG_HAPTIC_DEMO_START;
+}
+
+void DA7280_demo_enable(unsigned char on)
+{
+    FLAG_HAPTIC_DEMO_START = ~on;
+    
+    if (FLAG_HAPTIC_DEMO_START)
+    {
+        printf("DA7280 demo mode enable\r\n");
+    }
+    else
+    {
+        printf("DA7280 demo mode disable\r\n");
+    }
+}
+
+void DA7280_demo_mode(void)
+{
+    if (FLAG_HAPTIC_DEMO_START)
+    {
+        if (DA7280_is_TIMER_PERIOD_Trig())
+        {
+            DA7280_reset_TIMER_PERIOD();
+            FLAG_HAPTIC_STATE_MACHINE = 1;
+        }
+
+        if (FLAG_HAPTIC_STATE_MACHINE)
+        {
+            FLAG_HAPTIC_STATE_MACHINE = 0;
+            DA7280_demo_mode_statemachine();
+        }
+    }
+    else
+    {
+        DA7280_reset_TIMER_PERIOD();
+        FLAG_HAPTIC_STATE_MACHINE = 0;
+    }
 }
 

@@ -203,6 +203,7 @@
 #define DA7280_E_LIM_DRIVE_MASK                     (1 << 7)
 
 
+#define SEQUENCE_IDX0                               (0x00)
 #define SEQUENCE_IDX1                               (0x01)
 #define SEQUENCE_IDX2                               (0x02)
 #define SEQUENCE_IDX3                               (0x03)

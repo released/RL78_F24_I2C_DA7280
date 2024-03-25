@@ -51,6 +51,9 @@ Global variables and functions
 ***********************************************************************************************************************/
 void R_Pins_Create(void)
 {
+    /* Set INTP0 pin */
+    /* No register setting has been required for pin */
+
     /* Set INTP12 pin */
     PM7 |= 0x80U;
 

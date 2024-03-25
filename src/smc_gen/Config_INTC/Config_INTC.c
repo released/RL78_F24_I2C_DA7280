@@ -52,17 +52,48 @@ Global variables and functions
 ***********************************************************************************************************************/
 void R_Config_INTC_Create(void)
 {
+    PMK0 = 1U;    /* disable INTP0 operation */
+    PIF0 = 0U;    /* clear INTP0 interrupt flag */
     PMK12 = 1U;    /* disable INTP12 operation */
     PIF12 = 0U;    /* clear INTP12 interrupt flag */
+    /* Set INTP0 Level 3 (low) priority */
+    PPR10 = 1U;
+    PPR00 = 1U;
     /* Set INTP12 Level 3 (low) priority */
     PPR112 = 1U;
     PPR012 = 1U;
+    EGN0 = _01_INTP0_EDGE_FALLING_SEL;
+    EGP0 = _01_INTP0_EDGE_RISING_SEL;
     EGN1 = _10_INTP12_EDGE_FALLING_SEL;
     EGP1 = _00_INTP12_EDGE_RISING_UNSEL;
     /* Set INTP12 pin */
     PM7 |= 0x80U;
 
     R_Config_INTC_Create_UserInit();
+}
+
+/***********************************************************************************************************************
+* Function Name: R_Config_INTC_INTP0_Start
+* Description  : This function clears INTP0 interrupt flag and enables interrupt.
+* Arguments    : None
+* Return Value : None
+***********************************************************************************************************************/
+void R_Config_INTC_INTP0_Start(void)
+{
+    PIF0 = 0U;    /* clear INTP0 interrupt flag */
+    PMK0 = 0U;    /* enable INTP0 interrupt */
+}
+
+/***********************************************************************************************************************
+* Function Name: R_Config_INTC_INTP0_Stop
+* Description  : This function disables INTP0 interrupt and clears interrupt flag.
+* Arguments    : None
+* Return Value : None
+***********************************************************************************************************************/
+void R_Config_INTC_INTP0_Stop(void)
+{
+    PMK0 = 1U;    /* disable INTP0 interrupt */
+    PIF0 = 0U;    /* clear INTP0 interrupt flag */
 }
 
 /***********************************************************************************************************************

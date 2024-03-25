@@ -111,6 +111,8 @@ MD_STATUS I2C_read(unsigned char device_addr,unsigned char reg_addr,unsigned cha
 		return ret;
 	} 
 
+    // delay_ms(5);
+
     return ret;
 }
 
@@ -144,6 +146,8 @@ MD_STATUS I2C_write(unsigned char device_addr,unsigned char reg_addr,unsigned ch
 	} 
 	while (drv_get_I2C_send_flag() || drv_Is_I2C_bus_busy()){ ; } 	//Wait until the xfer is complete
    
+    // delay_ms(5);
+
     return ret;
 }
 

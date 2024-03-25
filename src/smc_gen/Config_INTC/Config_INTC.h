@@ -48,6 +48,8 @@ Typedef definitions
 Global functions
 ***********************************************************************************************************************/
 void R_Config_INTC_Create (void);
+void R_Config_INTC_INTP0_Start (void);
+void R_Config_INTC_INTP0_Stop (void);
 void R_Config_INTC_INTP12_Start (void);
 void R_Config_INTC_INTP12_Stop (void);
 void R_Config_INTC_Create_UserInit (void);

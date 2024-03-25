@@ -36,6 +36,7 @@ Includes
 /***********************************************************************************************************************
 Pragma directive
 ***********************************************************************************************************************/
+#pragma interrupt r_Config_INTC_intp0_interrupt(vect=INTP0)
 #pragma interrupt r_Config_INTC_intp12_interrupt(vect=INTP12)
 /* Start user code for pragma. Do not edit comment generated here */
 /* End user code. Do not edit comment generated here */
@@ -55,6 +56,19 @@ Global variables and functions
 void R_Config_INTC_Create_UserInit(void)
 {
     /* Start user code for user init. Do not edit comment generated here */
+    /* End user code. Do not edit comment generated here */
+}
+
+/***********************************************************************************************************************
+* Function Name: r_Config_INTC_intp0_interrupt
+* Description  : This function is INTP0 interrupt service routine.
+* Arguments    : None
+* Return Value : None
+***********************************************************************************************************************/
+static void __near r_Config_INTC_intp0_interrupt(void)
+{
+    /* Start user code for r_Config_INTC_intp0_interrupt. Do not edit comment generated here */
+    Button_Process_in_IRQ();
     /* End user code. Do not edit comment generated here */
 }
 
