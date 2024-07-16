@@ -1,11 +1,7 @@
 /*_____ I N C L U D E S ____________________________________________________*/
-#include "r_cg_macrodriver.h"
+
+#include "r_smc_entry.h"
 #include "platform.h"
-#include "Pin.h"
-#include "Config_TAU0_1.h"
-#include "Config_UART0.h"
-#include "Config_INTC.h"
-#include "Config_IICA0.h"
 
 #include "custom_func.h"
 
