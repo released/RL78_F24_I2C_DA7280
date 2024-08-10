@@ -886,6 +886,7 @@ void DA7280_PlaybackFinishCheck(void)
                 printf("[error]%s:0x%02X\r\n",indicator,ret);
             }
 
+            break;
         }
         #if 0
         else if (event == E_SEQ_FAULT)

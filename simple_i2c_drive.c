@@ -4,6 +4,7 @@
 
 #include "misc_config.h"
 #include "custom_func.h"
+#include "simple_i2c_drive.h"
 
 /*_____ D E C L A R A T I O N S ____________________________________________*/
 
@@ -87,24 +88,44 @@ bool drv_get_I2C_send_flag(void)
 MD_STATUS I2C_read(unsigned char device_addr,unsigned char reg_addr,unsigned char* rx_xfer_data,unsigned short rx_num)
 {
 	MD_STATUS ret = MD_OK;
-    unsigned char tmp = 0;
+    unsigned char tmp = 0;	
+	unsigned int u32IICA0TimeOutCnt = 0;
 
     tmp = reg_addr;
-
-    while (drv_get_I2C_send_flag() || drv_Is_I2C_bus_busy()){ ; } 	//Make sure bus is ready for xfer
+    // while (drv_get_I2C_send_flag() || drv_Is_I2C_bus_busy()){ ; } 	//Make sure bus is ready for xfer
+	
 	drv_set_I2C_send_flag(1);
-
 	ret = drv_I2C_write(device_addr, &tmp, 1);
 	if (ret != MD_OK)
     {
         printf("[I2C read error1]0x%02X\r\n" , ret);
 		return ret;
 	} 
-	while (drv_get_I2C_send_flag() || drv_Is_I2C_bus_busy()){ ; } 	//Wait until the xfer is complete
+	
+	u32IICA0TimeOutCnt = IICA0_TIMEOUT_LIMIT;
+	while (drv_get_I2C_send_flag() || drv_Is_I2C_bus_busy())
+    {
+        u32IICA0TimeOutCnt--;
+        if(u32IICA0TimeOutCnt == 0)
+        {
+            printf("%s bus busy*(xfer is complete),dev addr:0x%02X,reg addr:0x%02X\r\n",__func__,device_addr,reg_addr);
+            return MD_BUSY2;
+        }
+    } 	//Wait until the xfer is complete
 
 	drv_set_I2C_receive_flag(1);
 	ret = drv_I2C_read(device_addr, rx_xfer_data, rx_num);
-	while (drv_get_I2C_receive_flag() || drv_Is_I2C_bus_busy()){ ; } 	//Wait until the xfer is complete
+	
+	u32IICA0TimeOutCnt = IICA0_TIMEOUT_LIMIT;
+	while (drv_get_I2C_receive_flag() || drv_Is_I2C_bus_busy())
+    {
+        u32IICA0TimeOutCnt--;
+        if(u32IICA0TimeOutCnt == 0)
+        {
+            printf("%s bus busy**(xfer is complete),dev addr:0x%02X,reg addr:0x%02X\r\n",__func__,device_addr,reg_addr);
+            return MD_BUSY2;
+        }
+    } 	//Wait until the xfer is complete
 	if (ret != MD_OK)
     {
         printf("[I2C read error2]0x%02X\r\n" , ret);
@@ -120,7 +141,8 @@ MD_STATUS I2C_write(unsigned char device_addr,unsigned char reg_addr,unsigned ch
 {
 	MD_STATUS ret = MD_OK;
     unsigned char i = 0;
-    unsigned char buffer[128] = {0};
+    unsigned char buffer[128] = {0};	
+	unsigned int u32IICA0TimeOutCnt = 0;
 
     if (tx_num > 128)
     {
@@ -135,16 +157,26 @@ MD_STATUS I2C_write(unsigned char device_addr,unsigned char reg_addr,unsigned ch
         buffer[i+1] = tx_xfer_data[i];
     }
 
-    while (drv_get_I2C_send_flag() || drv_Is_I2C_bus_busy()){ ; } 	//Make sure bus is ready for xfer
+    // while (drv_get_I2C_send_flag() || drv_Is_I2C_bus_busy()){ ; } 	//Make sure bus is ready for xfer
+	
 	drv_set_I2C_send_flag(1);
-
 	ret = drv_I2C_write(device_addr, buffer , tx_num + 1);   // reg byte + data byte , at least 2 bytes
 	if (ret != MD_OK)
     {
         printf("[I2C write error1]0x%02X\r\n" , ret);
 		return ret;
 	} 
-	while (drv_get_I2C_send_flag() || drv_Is_I2C_bus_busy()){ ; } 	//Wait until the xfer is complete
+	
+	u32IICA0TimeOutCnt = IICA0_TIMEOUT_LIMIT;
+	while (drv_get_I2C_send_flag() || drv_Is_I2C_bus_busy())
+    {
+        u32IICA0TimeOutCnt--;
+        if(u32IICA0TimeOutCnt == 0)
+        {
+            printf("%s bus busy(xfer is complete),dev addr:0x%02X,reg addr:0x%02X\r\n",__func__,device_addr,reg_addr);
+            return MD_BUSY2;
+        }
+    } 	//Wait until the xfer is complete
    
     // delay_ms(5);
 
